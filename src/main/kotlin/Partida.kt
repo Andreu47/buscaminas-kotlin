@@ -14,7 +14,6 @@ private const val BLANCO = "\u001B[97m"
 private const val GRIS = "\u001B[90m"
 
 
-
 class Partida(private val filas: Int, private val columnas: Int) {
 
     // Creamos una matriz con todas las casillas del tablero
@@ -50,7 +49,7 @@ class Partida(private val filas: Int, private val columnas: Int) {
                     revelarMinas && casilla.tieneMina -> "*"
                     casilla.tieneBandera -> "F"
                     !casilla.descubierta -> "#"
-                    casilla.minasAlrededor == 0 -> "."
+                    casilla.minasAlrededor == 0 -> " "
                     else -> casilla.minasAlrededor.toString()
                 }
 
@@ -59,7 +58,6 @@ class Partida(private val filas: Int, private val columnas: Int) {
                     "*" -> ROJO
                     "F" -> AMARILLO
                     "#" -> GRIS
-                    "." -> GRIS
                     "1" -> AZUL
                     "2" -> VERDE
                     "3" -> ROJO
@@ -78,7 +76,6 @@ class Partida(private val filas: Int, private val columnas: Int) {
             println()
         }
     }
-
 
     private fun colocarMinas(filaInicial: Int, columnaInicial: Int) {
 
@@ -131,6 +128,31 @@ class Partida(private val filas: Int, private val columnas: Int) {
         }
     }
 
+    private fun descubrirZona(fila: Int, columna: Int) {
+
+        val casilla = tablero[fila][columna]
+
+        // Solo descubrimos casillas ocultas, sin bandera y sin mina
+        if (!casilla.descubierta && !casilla.tieneBandera && !casilla.tieneMina) {
+
+            casilla.descubierta = true
+
+            // Si no hay minas alrededor, descubrimos las casillas vecinas
+            if (casilla.minasAlrededor == 0) {
+
+                for (filaVecina in fila - 1..fila + 1) {
+                    for (columnaVecina in columna - 1..columna + 1) {
+
+                        // Comprobamos que la posicion vecina exista
+                        if (filaVecina in 0 until filas && columnaVecina in 0 until columnas) {
+                            descubrirZona(filaVecina, columnaVecina)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun descubrirCasilla(fila: Int, columna: Int): Boolean {
 
         var haPerdido = false
@@ -140,7 +162,7 @@ class Partida(private val filas: Int, private val columnas: Int) {
 
             val casilla = tablero[fila][columna]
 
-            // Solo descubrimos casillas ocultas y sin bandera
+            // Solo podemos descubrir casillas ocultas y sin bandera
             if (!casilla.descubierta && !casilla.tieneBandera) {
 
                 // Generamos las minas en el primer movimiento
@@ -150,8 +172,13 @@ class Partida(private val filas: Int, private val columnas: Int) {
                     minasGeneradas = true
                 }
 
-                casilla.descubierta = true
-                haPerdido = casilla.tieneMina
+                // Comprobamos si la casilla contiene una mina
+                if (casilla.tieneMina) {
+                    casilla.descubierta = true
+                    haPerdido = true
+                } else {
+                    descubrirZona(fila, columna)
+                }
             }
 
         } else {

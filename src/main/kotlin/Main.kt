@@ -2,7 +2,7 @@
 import java.util.Scanner
 
 private const val TAMANO_MINIMO = 5
-private const val TAMANO_MAXIMO = 15
+private const val TAMANO_MAXIMO = 25
 
 fun main() {
 
