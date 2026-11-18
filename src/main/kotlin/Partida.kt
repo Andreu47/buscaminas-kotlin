@@ -1,5 +1,19 @@
 
-private const val CASILLAS_POR_MINA = 4
+private const val CASILLAS_POR_MINA = 6
+
+// Colores del texto de la consola
+private const val RESET = "\u001B[0m"
+
+private const val ROJO = "\u001B[91m"
+private const val VERDE = "\u001B[92m"
+private const val AMARILLO = "\u001B[93m"
+private const val AZUL = "\u001B[94m"
+private const val MORADO = "\u001B[95m"
+private const val CIAN = "\u001B[96m"
+private const val BLANCO = "\u001B[97m"
+private const val GRIS = "\u001B[90m"
+
+
 
 class Partida(private val filas: Int, private val columnas: Int) {
 
@@ -10,22 +24,25 @@ class Partida(private val filas: Int, private val columnas: Int) {
     private var minasGeneradas = false
 
 
+
     fun mostrarTablero(revelarMinas: Boolean = false) {
 
         // Mostramos los numeros de las columnas
         print("    ")
 
         for (columna in 1..columnas) {
-            print(columna.toString().padStart(3))
+            print("$CIAN${columna.toString().padStart(3)}$RESET")
         }
 
         println()
 
-        // Recorremos las filas y columnas del tablero
+        // Recorremos todas las casillas del tablero
         for (fila in 0 until filas) {
-            print((fila + 1).toString().padStart(3) + " ")
+
+            print("$CIAN${(fila + 1).toString().padStart(3)}$RESET ")
 
             for (columna in 0 until columnas) {
+
                 val casilla = tablero[fila][columna]
 
                 // Elegimos el simbolo segun el estado de la casilla
@@ -37,12 +54,31 @@ class Partida(private val filas: Int, private val columnas: Int) {
                     else -> casilla.minasAlrededor.toString()
                 }
 
-                print(simbolo.padStart(3))
+                // Asignamos un color a cada simbolo
+                val color = when (simbolo) {
+                    "*" -> ROJO
+                    "F" -> AMARILLO
+                    "#" -> GRIS
+                    "." -> GRIS
+                    "1" -> AZUL
+                    "2" -> VERDE
+                    "3" -> ROJO
+                    "4" -> MORADO
+                    "5" -> AMARILLO
+                    "6" -> CIAN
+                    "7" -> BLANCO
+                    "8" -> GRIS
+                    else -> RESET
+                }
+
+                // Mostramos la casilla con su color
+                print("$color${simbolo.padStart(3)}$RESET")
             }
 
             println()
         }
     }
+
 
     private fun colocarMinas(filaInicial: Int, columnaInicial: Int) {
 
