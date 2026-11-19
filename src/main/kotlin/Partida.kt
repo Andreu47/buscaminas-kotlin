@@ -2,16 +2,16 @@
 private const val CASILLAS_POR_MINA = 6
 
 // Colores del texto de la consola
-private const val RESET = "\u001B[0m"
+const val RESET = "\u001B[0m"
 
-private const val ROJO = "\u001B[91m"
-private const val VERDE = "\u001B[92m"
-private const val AMARILLO = "\u001B[93m"
-private const val AZUL = "\u001B[94m"
-private const val MORADO = "\u001B[95m"
-private const val CIAN = "\u001B[96m"
-private const val BLANCO = "\u001B[97m"
-private const val GRIS = "\u001B[90m"
+const val ROJO = "\u001B[91m"
+const val VERDE = "\u001B[92m"
+const val AMARILLO = "\u001B[93m"
+const val AZUL = "\u001B[94m"
+const val MORADO = "\u001B[95m"
+const val CIAN = "\u001B[96m"
+const val BLANCO = "\u001B[97m"
+const val GRIS = "\u001B[90m"
 
 
 class Partida(private val filas: Int, private val columnas: Int) {
@@ -23,8 +23,9 @@ class Partida(private val filas: Int, private val columnas: Int) {
     private var minasGeneradas = false
 
 
-
     fun mostrarTablero(revelarMinas: Boolean = false) {
+
+        var banderasColocadas = 0
 
         // Mostramos los numeros de las columnas
         print("    ")
@@ -43,6 +44,11 @@ class Partida(private val filas: Int, private val columnas: Int) {
             for (columna in 0 until columnas) {
 
                 val casilla = tablero[fila][columna]
+
+                // Contamos las banderas colocadas en el tablero
+                if (casilla.tieneBandera) {
+                    banderasColocadas++
+                }
 
                 // Elegimos el simbolo segun el estado de la casilla
                 val simbolo = when {
@@ -75,6 +81,12 @@ class Partida(private val filas: Int, private val columnas: Int) {
 
             println()
         }
+
+        // Calculamos las minas que quedan por marcar
+        val minasRestantes = cantidadMinas - banderasColocadas
+
+        println()
+        println("$ROJO Minas: $cantidadMinas $RESET | $AMARILLO Banderas: $banderasColocadas $RESET | $CIAN Restantes: $minasRestantes $RESET")
     }
 
     private fun colocarMinas(filaInicial: Int, columnaInicial: Int) {
@@ -153,17 +165,72 @@ class Partida(private val filas: Int, private val columnas: Int) {
         }
     }
 
+    private fun descubrirAlrededor(fila: Int, columna: Int): Boolean {
+
+        var haPerdido = false
+        var banderasCercanas = 0
+
+        val numero = tablero[fila][columna].minasAlrededor
+
+        // Contamos las banderas de las casillas vecinas
+        for (filaVecina in fila - 1..fila + 1) {
+            for (columnaVecina in columna - 1..columna + 1) {
+
+                if (filaVecina in 0 until filas &&
+                    columnaVecina in 0 until columnas) {
+
+                    if (tablero[filaVecina][columnaVecina].tieneBandera) {
+                        banderasCercanas++
+                    }
+                }
+            }
+        }
+
+        // Descubrimos las casillas si las banderas coinciden con el numero
+        if (banderasCercanas == numero) {
+
+            for (filaVecina in fila - 1..fila + 1) {
+                for (columnaVecina in columna - 1..columna + 1) {
+
+                    if (filaVecina in 0 until filas &&
+                        columnaVecina in 0 until columnas && !haPerdido) {
+
+                        val vecina = tablero[filaVecina][columnaVecina]
+
+                        if (!vecina.descubierta && !vecina.tieneBandera) {
+
+                            if (vecina.tieneMina) {
+                                vecina.descubierta = true
+                                haPerdido = true
+                            } else {
+                                descubrirZona(filaVecina, columnaVecina)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return haPerdido
+    }
+
     fun descubrirCasilla(fila: Int, columna: Int): Boolean {
 
         var haPerdido = false
 
-        // Comprobamos que la posicion este dentro del tablero
+        // Comprobamos que la posicion sea valida
         if (fila in 0 until filas && columna in 0 until columnas) {
 
             val casilla = tablero[fila][columna]
 
-            // Solo podemos descubrir casillas ocultas y sin bandera
-            if (!casilla.descubierta && !casilla.tieneBandera) {
+            // Si ya esta descubierta, intentamos abrir las casillas vecinas
+            if (casilla.descubierta) {
+
+                if (casilla.minasAlrededor > 0) {
+                    haPerdido = descubrirAlrededor(fila, columna)
+                }
+
+            } else if (!casilla.tieneBandera) {
 
                 // Generamos las minas en el primer movimiento
                 if (!minasGeneradas) {
@@ -172,7 +239,7 @@ class Partida(private val filas: Int, private val columnas: Int) {
                     minasGeneradas = true
                 }
 
-                // Comprobamos si la casilla contiene una mina
+                // Comprobamos si hemos encontrado una mina
                 if (casilla.tieneMina) {
                     casilla.descubierta = true
                     haPerdido = true
@@ -204,4 +271,27 @@ class Partida(private val filas: Int, private val columnas: Int) {
             println("Posicion fuera del tablero.")
         }
     }
+
+    fun haGanado(): Boolean {
+
+        var casillasDescubiertas = 0
+
+        // Contamos las casillas descubiertas que no tienen mina
+        for (fila in 0 until filas) {
+            for (columna in 0 until columnas) {
+
+                val casilla = tablero[fila][columna]
+
+                if (casilla.descubierta && !casilla.tieneMina) {
+                    casillasDescubiertas++
+                }
+            }
+        }
+
+        // Calculamos cuantas casillas debemos descubrir para ganar
+        val casillasSeguras = filas * columnas - cantidadMinas
+
+        return minasGeneradas && casillasDescubiertas == casillasSeguras
+    }
+
 }

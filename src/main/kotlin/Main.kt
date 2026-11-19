@@ -35,19 +35,20 @@ fun main() {
 
     var jugando = true
     var haPerdido = false
+    var haGanado = false
 
 
     // Mantenemos el juego activo hasta salir o encontrar una mina
-    while (jugando && !haPerdido) {
+    while (jugando && !haPerdido && !haGanado) {
 
         println()
         partida.mostrarTablero()
 
         println()
-        println("d - Descubrir casilla")
-        println("b - Poner o quitar bandera")
-        println("s - Salir")
-        print("Accion: ")
+        println("$CIAN d - Descubrir casilla $RESET")
+        println("$CIAN b - Poner o quitar bandera $RESET")
+        println("$CIAN s - Salir $RESET")
+        print("$CIAN Accion: $RESET")
 
         val accion = scanner.next().lowercase()
 
@@ -77,17 +78,32 @@ fun main() {
                 println("Accion no valida.")
             }
         }
+
+        // Comprobamos si el jugador ha ganado
+        if (!haPerdido) {
+            haGanado = partida.haGanado()
+        }
     }
 
 
     // Mostramos el resultado de la partida
+
+    // Mostramos el resultado final de la partida
     if (haPerdido) {
+
         println()
         partida.mostrarTablero(true)
-        println("Has encontrado una mina. Fin de la partida.")
+        println("$ROJO Has encontrado una mina. Has perdido. $RESET")
+
+    } else if (haGanado) {
+
+        println()
+        partida.mostrarTablero()
+        println("$VERDE Enhorabuena! Has descubierto todas las casillas. $RESET")
 
     } else {
-        println("Partida finalizada.")
+
+        println("$CIAN Partida finalizada. $RESET")
     }
 
     scanner.close()
