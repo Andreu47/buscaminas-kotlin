@@ -1,110 +1,92 @@
-
 import java.util.Scanner
 
 private const val TAMANO_MINIMO = 5
-private const val TAMANO_MAXIMO = 25
+private const val TAMANO_MAXIMO = 15
 
 fun main() {
-
     val scanner = Scanner(System.`in`)
 
-    println("===== BUSCAMINAS =====")
+    println("$MORADO ===== BUSCAMINAS ===== $RESET")
+    val filas = pedirDimension(scanner, "filas")
+    val columnas = pedirDimension(scanner, "columnas")
 
-    // Pedimos el numero de filas
-    var filas: Int
-
-    do {
-        print("Numero de filas ($TAMANO_MINIMO-$TAMANO_MAXIMO): ")
-        filas = scanner.nextInt()
-
-    } while (filas !in TAMANO_MINIMO..TAMANO_MAXIMO)
-
-
-    // Pedimos el numero de columnas
-    var columnas: Int
-
-    do {
-        print("Numero de columnas ($TAMANO_MINIMO-$TAMANO_MAXIMO): ")
-        columnas = scanner.nextInt()
-
-    } while (columnas !in TAMANO_MINIMO..TAMANO_MAXIMO)
-
-
-    // Creamos una partida con las dimensiones elegidas
+    // Iniciamos el juego con el tablero elegido
     val partida = Partida(filas, columnas)
+    jugarPartida(scanner, partida)
+    scanner.close()
+}
 
-    var jugando = true
+private fun jugarPartida(scanner: Scanner, partida: Partida) {
+    var salir = false
     var haPerdido = false
-    var haGanado = false
+    println("$AMARILLO \nComandos: d fila columna | b fila columna | s para salir $RESET")
 
-
-    // Mantenemos el juego activo hasta salir o encontrar una mina
-    while (jugando && !haPerdido && !haGanado) {
-
+    // Procesamos movimientos hasta ganar, perder o salir
+    while (!salir && !haPerdido && !partida.haGanado()) {
         println()
         partida.mostrarTablero()
+        print("$MORADO \nAccion: $RESET")
 
-        println()
-        println("$CIAN d - Descubrir casilla $RESET")
-        println("$CIAN b - Poner o quitar bandera $RESET")
-        println("$CIAN s - Salir $RESET")
-        print("$CIAN Accion: $RESET")
-
-        val accion = scanner.next().lowercase()
-
-        when (accion) {
-
-            "d", "b" -> {
-
-                // Restamos uno porque los indices empiezan en cero
-                print("Fila: ")
-                val fila = scanner.nextInt() - 1
-
-                print("Columna: ")
-                val columna = scanner.nextInt() - 1
-
-                if (accion == "d") {
-                    haPerdido = partida.descubrirCasilla(fila, columna)
-                } else {
-                    partida.cambiarBandera(fila, columna)
-                }
-            }
-
-            "s" -> {
-                jugando = false
-            }
-
-            else -> {
-                println("Accion no valida.")
-            }
-        }
-
-        // Comprobamos si el jugador ha ganado
-        if (!haPerdido) {
-            haGanado = partida.haGanado()
+        // Separamos el comando en sus distintas partes
+        val partes = scanner.nextLine().trim().split(" ").filter { it.isNotEmpty() }
+        if (partes.size == 1 && partes[0].lowercase() == "s") {
+            salir = true
+        } else {
+            haPerdido = ejecutarMovimiento(partes, partida)
         }
     }
+    mostrarResultado(partida, haPerdido, salir)
+}
 
+private fun pedirDimension(scanner: Scanner, nombre: String): Int {
+    var dimension: Int
 
-    // Mostramos el resultado de la partida
+    // Repetimos la pregunta hasta recibir un numero valido
+    do {
+        print("Numero de $nombre ($TAMANO_MINIMO-$TAMANO_MAXIMO): ")
+        dimension = scanner.nextLine().trim().toIntOrNull() ?: 0
+        if (dimension !in TAMANO_MINIMO..TAMANO_MAXIMO) {
+            println("Introduce un numero entre $TAMANO_MINIMO y $TAMANO_MAXIMO.")
+        }
+    } while (dimension !in TAMANO_MINIMO..TAMANO_MAXIMO)
 
-    // Mostramos el resultado final de la partida
+    return dimension
+}
+
+private fun ejecutarMovimiento(partes: List<String>, partida: Partida): Boolean {
+    var haPerdido = false
+
+    // Un movimiento debe tener una accion y dos coordenadas
+    if (partes.size == 3) {
+        val fila = partes[1].toIntOrNull()
+        val columna = partes[2].toIntOrNull()
+
+        if (fila != null && columna != null) {
+            when (partes[0].lowercase()) {
+                "d" -> haPerdido = partida.descubrirCasilla(fila - 1, columna - 1)
+                "b" -> partida.cambiarBandera(fila - 1, columna - 1)
+                else -> println("$CIAN Accion no valida. Usa d, b o s. $RESET")
+            }
+        } else {
+            println("$ROJO La fila y la columna deben ser numeros. $RESET")
+        }
+    } else {
+        println("$ROJO Formato incorrecto. Ejemplo: d 3 5 $RESET")
+    }
+    return haPerdido
+}
+
+private fun mostrarResultado(partida: Partida, haPerdido: Boolean, salir: Boolean) {
+    println()
+
+    // Mostramos el tablero final cuando ganamos o perdemos
     if (haPerdido) {
-
-        println()
         partida.mostrarTablero(true)
         println("$ROJO Has encontrado una mina. Has perdido. $RESET")
-
-    } else if (haGanado) {
-
-        println()
+    } else if (!salir && partida.haGanado()) {
         partida.mostrarTablero()
         println("$VERDE Enhorabuena! Has descubierto todas las casillas. $RESET")
-
     } else {
-
         println("$CIAN Partida finalizada. $RESET")
     }
-
-    scanner.close()
 }
